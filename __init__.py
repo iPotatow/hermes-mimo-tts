@@ -13,10 +13,15 @@ from typing import Any, Dict, List, Optional
 from agent.tts_provider import TTSProvider
 
 
-API_URL = "https://api.xiaomimimo.com/v1/chat/completions"
+DEFAULT_BASE_URL = "https://api.xiaomimimo.com/v1"
 DEFAULT_MODEL = "mimo-v2.5-tts"
 DEFAULT_VOICE = "mimo_default"
 SUPPORTED_AUDIO_FORMATS = {"wav", "pcm16"}
+
+
+def _get_base_url() -> str:
+    """Get TTS base URL, falling back to XIAOMI_BASE_URL."""
+    return os.environ.get("XIAOMI_TTS_BASE_URL") or os.environ.get("XIAOMI_BASE_URL") or DEFAULT_BASE_URL
 
 
 class MiMoTTSProvider(TTSProvider):
@@ -43,9 +48,14 @@ class MiMoTTSProvider(TTSProvider):
             "env_vars": [
                 {
                     "key": "XIAOMI_API_KEY",
-                    "prompt": "Xiaomi MiMo API key",
+                    "prompt": "Xiaomi MiMo API key (sk- for pay-as-you-go, tp- for Token Plan)",
                     "url": "https://platform.xiaomimimo.com/console",
-                }
+                },
+                {
+                    "key": "XIAOMI_BASE_URL",
+                    "prompt": "Xiaomi API base URL (optional, auto-detected from key format)",
+                    "url": "https://platform.xiaomimimo.com/docs/en-US/integration/tools-overview",
+                },
             ],
         }
 
@@ -132,8 +142,9 @@ class MiMoTTSProvider(TTSProvider):
 
     def _post_json(self, *, api_key: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        api_url = f"{_get_base_url()}/chat/completions"
         request = urllib.request.Request(
-            API_URL,
+            api_url,
             data=data,
             headers={
                 "api-key": api_key,
