@@ -1,0 +1,7 @@
+name: mimo-tts
+version: "0.1.0"
+description: "Xiaomi MiMo TTS provider for Hermes Agent"
+author: "Codex"
+kind: backend
+requires_env:
+  - MIMO_API_KEY
