@@ -11,6 +11,7 @@
 - ⚡ **Style control / 风格控制** — Natural-language speaking style prompts / 自然语言风格提示
 - 🔧 **Speed control / 语速控制** — Adjustable playback speed / 可调播放速度
 - 📦 **Zero deps / 零依赖** — Pure Python stdlib / 纯 Python 标准库
+- 🔑 **Shared credentials / 共享凭证** — Uses same `XIAOMI_API_KEY` as Hermes Xiaomi LLM provider / 与小米语言模型共用 `XIAOMI_API_KEY`
 
 ## Install / 安装
 
@@ -19,8 +20,9 @@
 mkdir -p ~/.hermes/plugins
 cp -R hermes-mimo-tts ~/.hermes/plugins/mimo-tts
 
-# Set API key / 设置 API 密钥
-export MIMO_API_KEY="your...n
+# Set API key (same as Xiaomi LLM) / 设置 API 密钥（与小米语言模型相同）
+export XIAOMI_API_KEY="your-xiaomi-api-key"
+
 # Enable plugin / 启用插件
 hermes plugins enable mimo-tts
 ```
@@ -57,7 +59,7 @@ Restart Hermes to apply / 重启 Hermes 生效
 Override via config or environment / 通过配置或环境变量覆盖:
 
 ```bash
-export MIMO_TTS_VOICE="Chloe"
+export XIAOMI_TTS_VOICE="Chloe"
 ```
 
 ## Style Prompt / 风格提示
@@ -65,17 +67,21 @@ export MIMO_TTS_VOICE="Chloe"
 MiMo accepts natural-language style control / MiMo 支持自然语言风格控制:
 
 ```bash
-export MIMO_TTS_STYLE_PROMPT="Warm, clear, conversational tone. Slightly upbeat."
+export XIAOMI_TTS_STYLE_PROMPT="Warm, clear, conversational tone. Slightly upbeat."
 ```
 
 ## Environment Variables / 环境变量
 
 | Variable / 变量 | Required / 必需 | Description / 说明 |
 |-----------------|-----------------|---------------------|
-| `MIMO_API_KEY` | ✅ | Xiaomi MiMo API key / 小米 MiMo API 密钥 |
-| `MIMO_TTS_MODEL` | — | Override default model / 覆盖默认模型 |
-| `MIMO_TTS_VOICE` | — | Override default voice / 覆盖默认声音 |
-| `MIMO_TTS_STYLE_PROMPT` | — | Global speaking style / 全局说话风格 |
+| `XIAOMI_API_KEY` | ✅ | Xiaomi API key (shared with LLM) / 小米 API 密钥（与语言模型共用） |
+| `XIAOMI_TTS_MODEL` | — | Override default model / 覆盖默认模型 |
+| `XIAOMI_TTS_VOICE` | — | Override default voice / 覆盖默认声音 |
+| `XIAOMI_TTS_STYLE_PROMPT` | — | Global speaking style / 全局说话风格 |
+
+> 💡 `XIAOMI_API_KEY` is the same credential used by Hermes' Xiaomi LLM provider. If you already have Xiaomi configured as your model provider, TTS works out of the box.
+>
+> 💡 `XIAOMI_API_KEY` 与 Hermes 小米语言模型使用相同密钥。如果已配置小米为模型提供商，TTS 开箱即用。
 
 ## Models / 模型
 

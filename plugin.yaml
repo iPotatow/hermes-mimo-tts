@@ -4,4 +4,4 @@ description: "Xiaomi MiMo TTS provider for Hermes Agent"
 author: "Codex"
 kind: backend
 requires_env:
-  - MIMO_API_KEY
+  - XIAOMI_API_KEY

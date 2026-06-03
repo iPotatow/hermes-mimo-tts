@@ -33,7 +33,7 @@ class MiMoTTSProvider(TTSProvider):
         return True
 
     def is_available(self) -> bool:
-        return bool(os.environ.get("MIMO_API_KEY"))
+        return bool(os.environ.get("XIAOMI_API_KEY"))
 
     def get_setup_schema(self) -> Dict[str, Any]:
         return {
@@ -42,7 +42,7 @@ class MiMoTTSProvider(TTSProvider):
             "tag": "Xiaomi MiMo-V2.5 speech synthesis",
             "env_vars": [
                 {
-                    "key": "MIMO_API_KEY",
+                    "key": "XIAOMI_API_KEY",
                     "prompt": "Xiaomi MiMo API key",
                     "url": "https://platform.xiaomimimo.com/console",
                 }
@@ -89,9 +89,9 @@ class MiMoTTSProvider(TTSProvider):
         format: str = "mp3",
         **extra: Any,
     ) -> str:
-        api_key = os.environ.get("MIMO_API_KEY")
+        api_key = os.environ.get("XIAOMI_API_KEY")
         if not api_key:
-            raise RuntimeError("MIMO_API_KEY is not set")
+            raise RuntimeError("XIAOMI_API_KEY is not set")
 
         requested_format = (format or "").lower()
         audio_format = requested_format if requested_format in SUPPORTED_AUDIO_FORMATS else "wav"
@@ -104,11 +104,11 @@ class MiMoTTSProvider(TTSProvider):
         messages.append({"role": "assistant", "content": text})
 
         payload = {
-            "model": model or os.environ.get("MIMO_TTS_MODEL") or DEFAULT_MODEL,
+            "model": model or os.environ.get("XIAOMI_TTS_MODEL") or DEFAULT_MODEL,
             "messages": messages,
             "audio": {
                 "format": audio_format,
-                "voice": voice or os.environ.get("MIMO_TTS_VOICE") or DEFAULT_VOICE,
+                "voice": voice or os.environ.get("XIAOMI_TTS_VOICE") or DEFAULT_VOICE,
             },
         }
 
@@ -121,7 +121,7 @@ class MiMoTTSProvider(TTSProvider):
 
     def _build_instruction(self, *, speed: Optional[float]) -> str:
         pieces = []
-        style_prompt = os.environ.get("MIMO_TTS_STYLE_PROMPT", "").strip()
+        style_prompt = os.environ.get("XIAOMI_TTS_STYLE_PROMPT", "").strip()
         if style_prompt:
             pieces.append(style_prompt)
 
