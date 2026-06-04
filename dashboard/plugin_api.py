@@ -20,7 +20,7 @@ TOKEN_PLAN_BASE_URL = "https://token-plan-cn.xiaomimimo.com/v1"
 DEFAULT_MODEL = "mimo-v2.5-tts"
 DEFAULT_VOICE = "mimo_default"
 MODELS = ["mimo-v2.5-tts", "mimo-v2-tts"]
-VOICES = ["mimo_default", "Mia", "Chloe", "Milo", "Dean", "冰糖", "茉莉", "苏打", "白桦"]
+VOICES = ["mimo_default", "冰糖", "茉莉", "苏打", "白桦", "Mia", "Chloe", "Milo", "Dean"]
 
 
 def _base_url(api_key: str) -> str:
