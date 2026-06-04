@@ -1,5 +1,5 @@
 name: mimo-tts
-version: "0.3.0"
+version: "0.3.1"
 description: "Xiaomi MiMo TTS provider for Hermes Agent"
 author: "Codex"
 kind: backend
