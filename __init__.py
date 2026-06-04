@@ -52,88 +52,52 @@ class MiMoTTSProvider(TTSProvider):
             "badge": "paid",
             "tag": "Xiaomi MiMo-V2.5 speech synthesis",
             "env_vars": [
-                {
-                    "key": "XIAOMI_API_KEY",
-                    "prompt": "Xiaomi MiMo API key (sk- for pay-as-you-go, tp- for Token Plan)",
-                    "url": "https://platform.xiaomimimo.com/console",
-                },
-                {
-                    "key": "XIAOMI_BASE_URL",
-                    "prompt": "Xiaomi API base URL (optional, auto-detected from key format)",
-                    "url": "https://platform.xiaomimimo.com/docs/en-US/integration/tools-overview",
-                },
+                {"key": "XIAOMI_API_KEY", "prompt": "Xiaomi MiMo API key (sk- for pay-as-you-go, tp- for Token Plan)", "url": "https://platform.xiaomimimo.com/console"},
+                {"key": "XIAOMI_BASE_URL", "prompt": "Xiaomi API base URL (optional, auto-detected from key format)", "url": "https://platform.xiaomimimo.com/docs/en-US/integration/tools-overview"},
             ],
         }
 
     def list_models(self) -> List[Dict[str, Any]]:
         return [
-            {
-                "id": "mimo-v2.5-tts",
-                "display": "MiMo-V2.5 TTS",
-                "languages": ["zh", "en"],
-                "max_text_length": 5000,
-            },
-            {
-                "id": "mimo-v2-tts",
-                "display": "MiMo-V2 TTS",
-                "languages": ["zh", "en"],
-                "max_text_length": 5000,
-            },
+            {"id": "mimo-v2.5-tts", "display": "MiMo-V2.5 TTS", "languages": ["zh", "en"], "max_text_length": 5000},
+            {"id": "mimo-v2-tts", "display": "MiMo-V2 TTS", "languages": ["zh", "en"], "max_text_length": 5000},
         ]
 
     def list_voices(self) -> List[Dict[str, Any]]:
         return [
-            {"id": "mimo_default", "display": "MiMo default"},
-            {"id": "Mia", "display": "Mia", "language": "en", "gender": "female"},
-            {"id": "Chloe", "display": "Chloe", "language": "en", "gender": "female"},
-            {"id": "Milo", "display": "Milo", "language": "en", "gender": "male"},
-            {"id": "Dean", "display": "Dean", "language": "en", "gender": "male"},
+            {"id": "mimo_default", "display": "Cluster default (CN: 冰糖; others: Mia)"},
             {"id": "冰糖", "display": "冰糖", "language": "zh", "gender": "female"},
             {"id": "茉莉", "display": "茉莉", "language": "zh", "gender": "female"},
             {"id": "苏打", "display": "苏打", "language": "zh", "gender": "male"},
             {"id": "白桦", "display": "白桦", "language": "zh", "gender": "male"},
+            {"id": "Mia", "display": "Mia", "language": "en", "gender": "female"},
+            {"id": "Chloe", "display": "Chloe", "language": "en", "gender": "female"},
+            {"id": "Milo", "display": "Milo", "language": "en", "gender": "male"},
+            {"id": "Dean", "display": "Dean", "language": "en", "gender": "male"},
         ]
 
-    def synthesize(
-        self,
-        text: str,
-        output_path: str,
-        *,
-        voice: Optional[str] = None,
-        model: Optional[str] = None,
-        speed: Optional[float] = None,
-        format: str = "mp3",
-        **extra: Any,
-    ) -> str:
+    def synthesize(self, text: str, output_path: str, *, voice: Optional[str] = None, model: Optional[str] = None, speed: Optional[float] = None, format: str = "mp3", **extra: Any) -> str:
         api_key = os.environ.get("XIAOMI_API_KEY")
         if not api_key:
             raise RuntimeError("XIAOMI_API_KEY is not set")
-
         audio_format = "wav"
         final_output_path = self._output_path_for_format(output_path, audio_format)
-
         instruction = self._build_instruction(speed=speed)
         messages = []
         if instruction:
             messages.append({"role": "user", "content": instruction})
         messages.append({"role": "assistant", "content": text})
-
         payload = {
             "model": model or os.environ.get("XIAOMI_TTS_MODEL") or DEFAULT_MODEL,
             "messages": messages,
-            "audio": {
-                "format": audio_format,
-                "voice": voice or os.environ.get("XIAOMI_TTS_VOICE") or DEFAULT_VOICE,
-            },
+            "audio": {"format": audio_format, "voice": voice or os.environ.get("XIAOMI_TTS_VOICE") or DEFAULT_VOICE},
         }
-
         response = self._post_json(api_key=api_key, payload=payload)
         audio_data = self._extract_audio_data(response)
         try:
             audio_bytes = base64.b64decode(audio_data, validate=True)
         except (ValueError, binascii.Error) as exc:
             raise RuntimeError("MiMo TTS returned invalid base64 audio data") from exc
-
         output = Path(final_output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_bytes(audio_bytes)
@@ -144,25 +108,18 @@ class MiMoTTSProvider(TTSProvider):
         style_prompt = os.environ.get("XIAOMI_TTS_STYLE_PROMPT", "").strip()
         if style_prompt:
             pieces.append(style_prompt)
-
         if speed and speed > 0 and abs(speed - 1.0) >= 0.05:
             pieces.append(f"Speak at about {speed:.2f}x normal speed.")
-
         return " ".join(pieces)
 
     def _post_json(self, *, api_key: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        api_url = f"{_get_base_url(api_key)}/chat/completions"
         request = urllib.request.Request(
-            api_url,
+            f"{_get_base_url(api_key)}/chat/completions",
             data=data,
-            headers={
-                "api-key": api_key,
-                "Content-Type": "application/json",
-            },
+            headers={"api-key": api_key, "Content-Type": "application/json"},
             method="POST",
         )
-
         try:
             with urllib.request.urlopen(request, timeout=120) as response:
                 raw = response.read().decode("utf-8")
@@ -171,7 +128,6 @@ class MiMoTTSProvider(TTSProvider):
             raise RuntimeError(f"MiMo TTS request failed: HTTP {exc.code}: {body}") from exc
         except urllib.error.URLError as exc:
             raise RuntimeError(f"MiMo TTS request failed: {exc.reason}") from exc
-
         try:
             return json.loads(raw)
         except json.JSONDecodeError as exc:
@@ -182,11 +138,9 @@ class MiMoTTSProvider(TTSProvider):
             message = response["choices"][0]["message"]
         except (KeyError, IndexError, TypeError) as exc:
             raise RuntimeError(f"MiMo TTS response did not contain a message: {response}") from exc
-
         audio = message.get("audio")
         if not isinstance(audio, dict) or not audio.get("data"):
             raise RuntimeError(f"MiMo TTS response did not contain audio data: {response}")
-
         return audio["data"]
 
     def _output_path_for_format(self, output_path: str, audio_format: str) -> str:
