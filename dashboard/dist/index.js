@@ -30,9 +30,7 @@
           h(CardTitle, null, "运行状态"),
           h("p", { className: "mimo-subtle" }, "当前 Hermes 进程中的 MiMo TTS 配置")
         ),
-        h(Badge, { variant: configured ? "default" : "destructive" },
-          configured ? "已连接" : "未配置"
-        )
+        h(Badge, { variant: configured ? "default" : "destructive" }, configured ? "已连接" : "未配置")
       ),
       h(CardContent, null,
         h("div", { className: "mimo-meta-grid" },
@@ -46,16 +44,14 @@
           h("code", null, status ? status.base_url : "—")
         ),
         h("div", { className: "mimo-actions mimo-status-actions" },
-          h(Button, { variant: "outline", onClick: onRefresh, disabled: loading },
-            loading ? "刷新中…" : "刷新状态"
-          ),
+          h(Button, { variant: "outline", onClick: onRefresh, disabled: loading }, loading ? "刷新中…" : "刷新状态"),
           h("a", { className: "mimo-link", href: "/env" }, "前往 Keys 设置")
         )
       )
     );
   }
 
-  function Studio({ status }) {
+  function Studio({ status, onRefresh }) {
     const [text, setText] = useState("你好，我是由小米 MiMo 提供语音能力的 Hermes Agent。");
     const [model, setModel] = useState("mimo-v2.5-tts");
     const [voice, setVoice] = useState("mimo_default");
@@ -63,6 +59,7 @@
     const [speed, setSpeed] = useState("1");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
+    const [notice, setNotice] = useState("");
     const [audioUrl, setAudioUrl] = useState("");
 
     useEffect(function () {
@@ -73,13 +70,12 @@
     }, [status]);
 
     useEffect(function () {
-      return function () {
-        if (audioUrl) URL.revokeObjectURL(audioUrl);
-      };
+      return function () { if (audioUrl) URL.revokeObjectURL(audioUrl); };
     }, [audioUrl]);
 
     async function synthesize() {
       setError("");
+      setNotice("");
       setBusy(true);
       try {
         const response = await SDK.authedFetch("/api/plugins/mimo-tts/synthesize", {
@@ -105,6 +101,26 @@
       }
     }
 
+    async function saveDefaultVoice() {
+      setError("");
+      setNotice("");
+      setBusy(true);
+      try {
+        await SDK.api.setEnvVar("XIAOMI_TTS_VOICE", voice);
+        await onRefresh();
+        setNotice("默认音色已保存为 " + voice + "，后续 Hermes TTS 会使用该音色。");
+      } catch (err) {
+        setError(err.message || "保存默认音色失败");
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function voiceLabel(item) {
+      if (item === "mimo_default") return "跟随集群默认（中国区：冰糖；其他：Mia）";
+      return item;
+    }
+
     const models = status ? status.models : ["mimo-v2.5-tts", "mimo-v2-tts"];
     const voices = status ? status.voices : ["mimo_default"];
     const disabled = busy || !status || !status.configured || !text.trim();
@@ -116,69 +132,40 @@
       ),
       h(CardContent, { className: "mimo-studio-content" },
         h(Field, { label: "朗读文本", hint: text.length + " / 5000" },
-          h("textarea", {
-            className: "mimo-textarea",
-            value: text,
-            maxLength: 5000,
-            onChange: function (event) { setText(event.target.value); },
-            placeholder: "输入需要合成的中文或英文文本"
-          })
+          h("textarea", { className: "mimo-textarea", value: text, maxLength: 5000,
+            onChange: function (event) { setText(event.target.value); }, placeholder: "输入需要合成的中文或英文文本" })
         ),
         h("div", { className: "mimo-form-grid" },
           h(Field, { label: "模型" },
-            h("select", {
-              className: "mimo-select",
-              value: model,
-              onChange: function (event) { setModel(event.target.value); }
-            }, models.map(function (item) {
-              return h("option", { value: item, key: item }, item);
-            }))
+            h("select", { className: "mimo-select", value: model, onChange: function (event) { setModel(event.target.value); } },
+              models.map(function (item) { return h("option", { value: item, key: item }, item); }))
           ),
           h(Field, { label: "声音" },
-            h("select", {
-              className: "mimo-select",
-              value: voice,
-              onChange: function (event) { setVoice(event.target.value); }
-            }, voices.map(function (item) {
-              return h("option", { value: item, key: item }, item);
-            }))
+            h("select", { className: "mimo-select", value: voice, onChange: function (event) { setVoice(event.target.value); } },
+              voices.map(function (item) { return h("option", { value: item, key: item }, voiceLabel(item)); }))
           ),
           h(Field, { label: "语速", hint: Number(speed).toFixed(1) + "×" },
-            h("input", {
-              className: "mimo-range",
-              type: "range",
-              min: "0.5",
-              max: "2",
-              step: "0.1",
-              value: speed,
-              onChange: function (event) { setSpeed(event.target.value); }
-            })
+            h("input", { className: "mimo-range", type: "range", min: "0.5", max: "2", step: "0.1", value: speed,
+              onChange: function (event) { setSpeed(event.target.value); } })
           ),
           h(Field, { label: "说话风格", hint: "可选" },
-            h("input", {
-              className: "mimo-input",
-              value: style,
-              maxLength: 1000,
-              onChange: function (event) { setStyle(event.target.value); },
-              placeholder: "例如：温暖、清晰、自然"
-            })
+            h("input", { className: "mimo-input", value: style, maxLength: 1000,
+              onChange: function (event) { setStyle(event.target.value); }, placeholder: "例如：温暖、清晰、自然" })
           )
         ),
         error ? h("div", { className: "mimo-error", role: "alert" }, error) : null,
+        notice ? h("div", { className: "mimo-notice", role: "status" }, notice) : null,
         h("div", { className: "mimo-output" },
           audioUrl
             ? h(React.Fragment, null,
                 h("audio", { className: "mimo-audio", src: audioUrl, controls: true, autoPlay: true }),
-                h("a", { className: "mimo-download", href: audioUrl, download: "mimo-preview.wav" }, "下载 WAV")
-              )
-            : h("p", { className: "mimo-empty" },
-                status && status.configured ? "生成后的音频会显示在这里" : "设置 XIAOMI_API_KEY 后即可试听"
-              )
+                h("a", { className: "mimo-download", href: audioUrl, download: "mimo-preview.wav" }, "下载 WAV"))
+            : h("p", { className: "mimo-empty" }, status && status.configured ? "生成后的音频会显示在这里" : "设置 XIAOMI_API_KEY 后即可试听")
         ),
         h("div", { className: "mimo-actions" },
-          h(Button, { onClick: synthesize, disabled: disabled },
-            busy ? "正在合成…" : "生成并试听"
-          )
+          h(Button, { variant: "outline", onClick: saveDefaultVoice, disabled: busy || !status || voice === status.voice },
+            voice === (status && status.voice) ? "当前默认音色" : "设为默认音色"),
+          h(Button, { onClick: synthesize, disabled: disabled }, busy ? "正在合成…" : "生成并试听")
         )
       )
     );
@@ -192,13 +179,9 @@
     async function loadStatus() {
       setLoading(true);
       setError("");
-      try {
-        setStatus(await SDK.fetchJSON("/api/plugins/mimo-tts/status"));
-      } catch (err) {
-        setError(err.message || "无法读取插件状态");
-      } finally {
-        setLoading(false);
-      }
+      try { setStatus(await SDK.fetchJSON("/api/plugins/mimo-tts/status")); }
+      catch (err) { setError(err.message || "无法读取插件状态"); }
+      finally { setLoading(false); }
     }
 
     useEffect(function () { loadStatus(); }, []);
@@ -211,14 +194,12 @@
           h("p", null, "检查连接状态，调整声音参数，并在 Hermes Dashboard 中直接试听。")
         ),
         h("div", { className: "mimo-signal", "aria-label": "MiMo TTS status" },
-          h("span", { className: status && status.configured ? "is-online" : "" }),
-          status && status.configured ? "Ready" : "Setup required"
-        )
+          h("span", { className: status && status.configured ? "is-online" : "" }), status && status.configured ? "Ready" : "Setup required")
       ),
       error ? h("div", { className: "mimo-error", role: "alert" }, error) : null,
       h("div", { className: "mimo-layout" },
         h(StatusPanel, { status, loading, onRefresh: loadStatus }),
-        h(Studio, { status })
+        h(Studio, { status, onRefresh: loadStatus })
       )
     );
   }
