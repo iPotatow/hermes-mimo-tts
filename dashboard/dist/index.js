@@ -82,7 +82,7 @@
       setError("");
       setBusy(true);
       try {
-        const response = await fetch("/api/plugins/mimo-tts/synthesize", {
+        const response = await SDK.authedFetch("/api/plugins/mimo-tts/synthesize", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, model, voice, style, speed: Number(speed) })
