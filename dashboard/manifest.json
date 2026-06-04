@@ -3,11 +3,8 @@
   "label": "MiMo TTS",
   "description": "Configure and test Xiaomi MiMo speech synthesis",
   "icon": "Activity",
-  "version": "0.3.0",
-  "tab": {
-    "path": "/mimo-tts",
-    "position": "after:config"
-  },
+  "version": "0.3.1",
+  "tab": { "path": "/mimo-tts", "position": "after:config" },
   "entry": "dist/index.js",
   "css": "dist/style.css",
   "api": "plugin_api.py"
