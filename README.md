@@ -5,7 +5,7 @@ Xiaomi MiMo TTS provider plugin for [Hermes Agent](https://github.com/nousresear
 ## Features / 功能
 
 - Chinese and English MiMo TTS voices / 中英文 MiMo TTS 音色
-- Hermes Dashboard preview, playback, download, and persistent default-voice controls
+- Dashboard status, preview, playback, download, and persistent default-voice controls
 - Pay-as-you-go and Token Plan endpoint support
 - Uses the same `XIAOMI_API_KEY` as Hermes' Xiaomi LLM provider
 
@@ -29,28 +29,26 @@ tts:
     max_text_length: 5000
 ```
 
-## Environment Variables / 环境变量
-
-| Variable | Description |
-|----------|-------------|
-| `XIAOMI_API_KEY` | Xiaomi API key (`sk-` or `tp-`) |
-| `XIAOMI_BASE_URL` | API URL shared with Xiaomi LLM |
-| `XIAOMI_TTS_BASE_URL` | TTS-specific API URL override |
-| `XIAOMI_TTS_MODEL` | Default TTS model |
-| `XIAOMI_TTS_VOICE` | Persistent default voice |
-| `XIAOMI_TTS_STYLE_PROMPT` | Global speaking style |
-
 ## Dashboard / 控制台
 
-The **MiMo TTS** tab supports voice selection, preview playback, WAV download, and saving the selected voice as the Hermes default.
+The MiMo TTS tab displays the active plugin version, API key state, billing mode, region, endpoint source, effective default voice, voice source, model, and style state. Preview results show the actual voice, request duration, and audio size.
+
+The UI always filters legacy `mimo_default` values, including values returned by an older running Dashboard backend.
 
 ```bash
 hermes dashboard
 ```
 
-## Voices / 音色
+After updating the plugin, restart Dashboard so its Python API is reloaded:
 
-The selectable voices follow Xiaomi's order. `mimo_default` is intentionally not exposed.
+```bash
+cd ~/.hermes/plugins/mimo-tts
+git pull
+hermes dashboard --stop
+hermes dashboard --port 9119
+```
+
+## Voices / 音色
 
 | Voice | Language | Gender |
 |-------|----------|--------|
@@ -63,14 +61,18 @@ The selectable voices follow Xiaomi's order. `mimo_default` is intentionally not
 | `Milo` | English | Male |
 | `Dean` | English | Male |
 
-When no voice is configured, the plugin uses the concrete regional default: `冰糖` for China endpoints and `Mia` for other endpoints. Existing `mimo_default` settings are resolved the same way for compatibility, but are never shown as a selectable voice.
+When no voice is configured, the plugin uses `冰糖` for China endpoints and `Mia` for other endpoints. Existing `mimo_default` settings are resolved for compatibility but are never displayed as a selectable voice.
 
-## Endpoints / 端点
+## Environment Variables / 环境变量
 
-| Mode | Base URL | Key |
-|------|----------|-----|
-| Pay-as-you-go | `https://api.xiaomimimo.com/v1` | `sk-...` |
-| Token Plan China | `https://token-plan-cn.xiaomimimo.com/v1` | `tp-...` |
+| Variable | Description |
+|----------|-------------|
+| `XIAOMI_API_KEY` | Xiaomi API key (`sk-` or `tp-`) |
+| `XIAOMI_BASE_URL` | API URL shared with Xiaomi LLM |
+| `XIAOMI_TTS_BASE_URL` | TTS-specific API URL override |
+| `XIAOMI_TTS_MODEL` | Default TTS model |
+| `XIAOMI_TTS_VOICE` | Persistent default voice |
+| `XIAOMI_TTS_STYLE_PROMPT` | Global speaking style |
 
 ## License
 
