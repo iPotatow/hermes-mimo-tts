@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import binascii
 import json
 import os
 import urllib.error
@@ -14,14 +15,19 @@ from agent.tts_provider import TTSProvider
 
 
 DEFAULT_BASE_URL = "https://api.xiaomimimo.com/v1"
+TOKEN_PLAN_BASE_URL = "https://token-plan-cn.xiaomimimo.com/v1"
 DEFAULT_MODEL = "mimo-v2.5-tts"
 DEFAULT_VOICE = "mimo_default"
-SUPPORTED_AUDIO_FORMATS = {"wav", "pcm16"}
 
 
-def _get_base_url() -> str:
-    """Get TTS base URL, falling back to XIAOMI_BASE_URL."""
-    return os.environ.get("XIAOMI_TTS_BASE_URL") or os.environ.get("XIAOMI_BASE_URL") or DEFAULT_BASE_URL
+def _get_base_url(api_key: str = "") -> str:
+    """Get the configured URL or select the endpoint from the API key type."""
+    configured = os.environ.get("XIAOMI_TTS_BASE_URL") or os.environ.get("XIAOMI_BASE_URL")
+    if configured:
+        return configured.rstrip("/")
+    if api_key.startswith("tp-"):
+        return TOKEN_PLAN_BASE_URL
+    return DEFAULT_BASE_URL
 
 
 class MiMoTTSProvider(TTSProvider):
@@ -103,8 +109,7 @@ class MiMoTTSProvider(TTSProvider):
         if not api_key:
             raise RuntimeError("XIAOMI_API_KEY is not set")
 
-        requested_format = (format or "").lower()
-        audio_format = requested_format if requested_format in SUPPORTED_AUDIO_FORMATS else "wav"
+        audio_format = "wav"
         final_output_path = self._output_path_for_format(output_path, audio_format)
 
         instruction = self._build_instruction(speed=speed)
@@ -124,9 +129,14 @@ class MiMoTTSProvider(TTSProvider):
 
         response = self._post_json(api_key=api_key, payload=payload)
         audio_data = self._extract_audio_data(response)
-        audio_bytes = base64.b64decode(audio_data)
+        try:
+            audio_bytes = base64.b64decode(audio_data, validate=True)
+        except (ValueError, binascii.Error) as exc:
+            raise RuntimeError("MiMo TTS returned invalid base64 audio data") from exc
 
-        Path(final_output_path).write_bytes(audio_bytes)
+        output = Path(final_output_path)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(audio_bytes)
         return final_output_path
 
     def _build_instruction(self, *, speed: Optional[float]) -> str:
@@ -142,7 +152,7 @@ class MiMoTTSProvider(TTSProvider):
 
     def _post_json(self, *, api_key: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        api_url = f"{_get_base_url()}/chat/completions"
+        api_url = f"{_get_base_url(api_key)}/chat/completions"
         request = urllib.request.Request(
             api_url,
             data=data,

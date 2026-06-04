@@ -10,7 +10,8 @@
 - 🌐 **Bilingual / 双语** — Native Chinese and English support / 原生中英文支持
 - ⚡ **Style control / 风格控制** — Natural-language speaking style prompts / 自然语言风格提示
 - 🔧 **Speed control / 语速控制** — Adjustable playback speed / 可调播放速度
-- 📦 **Zero deps / 零依赖** — Pure Python stdlib / 纯 Python 标准库
+- 📊 **Dashboard / 控制台** — Status, voice controls, synthesis preview and WAV download / 状态检查、声音控制、合成试听与下载
+- 📦 **Zero extra deps / 零额外依赖** — Provider uses Python stdlib; dashboard uses Hermes' bundled FastAPI / Provider 使用 Python 标准库，Dashboard 使用 Hermes 自带 FastAPI
 - 🔑 **Shared credentials / 共享凭证** — Uses same `XIAOMI_API_KEY` as Hermes Xiaomi LLM provider / 与小米语言模型共用 `XIAOMI_API_KEY`
 - 🌏 **Dual endpoints / 双端点** — Supports both Pay-as-you-go and Token Plan / 支持按量计费和 Token Plan
 
@@ -22,7 +23,8 @@ mkdir -p ~/.hermes/plugins
 cp -R hermes-mimo-tts ~/.hermes/plugins/mimo-tts
 
 # Set API key (same as Xiaomi LLM) / 设置 API 密钥（与小米语言模型相同）
-export XIAOMI_API_KEY="your...n
+export XIAOMI_API_KEY="your-xiaomi-api-key"
+
 # Enable plugin / 启用插件
 hermes plugins enable mimo-tts
 ```
@@ -34,9 +36,10 @@ Add to `~/.hermes/config.yaml` / 添加到 `~/.hermes/config.yaml`:
 ```yaml
 tts:
   provider: mimo-tts
+  model: mimo-v2.5-tts
+  voice: mimo_default
+  output_format: wav
   mimo-tts:
-    model: mimo-v2.5-tts
-    voice: mimo_default
     max_text_length: 5000
 ```
 
@@ -51,7 +54,7 @@ Xiaomi MiMo offers two billing modes / 小米 MiMo 提供两种计费模式:
 | **Pay-as-you-go / 按量计费** | `https://api.xiaomimimo.com/v1` | `sk-xxxxx` |
 | **Token Plan / 订阅制** | `https://token-plan-cn.xiaomimimo.com/v1` | `tp-xxxxx` |
 
-> 💡 If you use Token Plan for LLM, TTS will automatically use the same endpoint.
+> 💡 A `tp-` API key automatically selects the Token Plan endpoint unless a base URL override is set.
 >
 > 💡 如果你用 Token Plan 跑语言模型，TTS 会自动使用相同端点。
 
@@ -70,6 +73,24 @@ Xiaomi MiMo offers two billing modes / 小米 MiMo 提供两种计费模式:
 1. `XIAOMI_TTS_BASE_URL` (TTS专用)
 2. `XIAOMI_BASE_URL` (与语言模型共用)
 3. Default / 默认: `https://api.xiaomimimo.com/v1`
+
+Without an override, an API key beginning with `tp-` selects `https://token-plan-cn.xiaomimimo.com/v1`.
+
+## Dashboard / 控制台
+
+The plugin adds a **MiMo TTS** tab to the Hermes web dashboard. It shows a redacted connection status and provides model, voice, speed, style, text-to-speech preview, playback, and WAV download controls.
+
+```bash
+hermes dashboard
+```
+
+Open the URL printed by Hermes. After installation, restart the dashboard once so its backend route is mounted. To rescan only the UI bundle:
+
+```bash
+curl http://127.0.0.1:9119/api/dashboard/plugins/rescan
+```
+
+The plugin dashboard never returns the API key to the browser. Use Hermes' built-in **Keys** page to set or update `XIAOMI_API_KEY`.
 
 ## Voices / 声音列表
 
